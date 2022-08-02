@@ -35,10 +35,7 @@ PY2 = sys.version_info.major < 3
 
 
 # .rst should created by pyconcrete-admin
-if os.path.exists('README.rst'):
-    readme_path = 'README.rst'
-else:
-    readme_path = 'README.md'
+readme_path = 'README.rst' if os.path.exists('README.rst') else 'README.md'
 with open(readme_path, 'r') as f:
     readme = f.read()
 
@@ -58,9 +55,7 @@ def is_mingw():
     if 'compiler' not in _build:
         return False
     compiler = _build['compiler']
-    if compiler[1].startswith('mingw'):
-        return True
-    return False
+    return bool(compiler[1].startswith('mingw'))
 
 
 def is_msvc():
@@ -72,10 +67,7 @@ def is_mac():
 
 
 def hash_key(key):
-    if PY2:
-        factor = sum([ord(s) for s in key])
-    else:
-        factor = sum([s for s in key])
+    factor = sum(ord(s) for s in key) if PY2 else sum(list(key))
     factor %= 128
     if factor < 16:
         factor += 16
@@ -270,15 +262,10 @@ class InstallEx(CmdBase, install):
         filename = join(self.install_libbase, 'pyconcrete.pth')
         with open(filename, 'w') as f:
             f.write('import pyconcrete')
-        print('creating %s' % filename)
+        print(f'creating {filename}')
 
     def install_exe(self):
-        if sys.platform == 'win32':
-            # install `pyconcrete.exe` to %PYTHON%/Scripts
-            exe_name = 'pyconcrete.exe'
-        else:
-            # install `pyconcrete` to /usr/local/bin
-            exe_name = 'pyconcrete'
+        exe_name = 'pyconcrete.exe' if sys.platform == 'win32' else 'pyconcrete'
         self.copy_file(os.path.join(self.build_scripts, exe_name),
                        os.path.join(self.install_scripts, exe_name))
 
@@ -340,7 +327,7 @@ def get_libraries(include_python_lib=False):
 
 def get_exe_link_args():
     ver = '%d.%d' % (sys.version_info.major, sys.version_info.minor)
-    if is_msvc() and (ver == '3.3' or ver == '3.4'):
+    if is_msvc() and ver in ['3.3', '3.4']:
         # For Fix Manifest error, https://bugs.python.org/issue4431
         return ['/MANIFEST']
 
